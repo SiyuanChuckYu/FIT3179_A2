@@ -1,0 +1,286 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "background": null,
+  "width": "container",
+  "height": 460,
+  "autosize": {
+    "type": "fit-x",
+    "contains": "padding"
+  },
+  "data": {
+    "url": "../data/Australia_Household_Income_2007_2020.csv",
+    "format": {
+      "type": "csv",
+      "parse": {
+        "Mean_Income_per_Week": "number"
+      }
+    }
+  },
+  "params": [
+    {
+      "name": "Top_n_states",
+      "value": 8,
+      "bind": {
+        "input": "range",
+        "min": 1,
+        "max": 8,
+        "step": 1,
+        "name": "Top States Displayed: "
+      }
+    }
+  ],
+  "transform": [
+    {
+      "#comment": "Convert year string to a date at mid-year for consistent temporal axis positioning.",
+      "calculate": "datetime(parseInt(substring(datum.Year,0,4)), 6, 30)",
+      "as": "date"
+    },
+    {
+      "#comment": "Compute yearly ranks so the lines can be ordered by income.",
+      "window": [
+        {
+          "op": "rank",
+          "as": "rank"
+        }
+      ],
+      "sort": [
+        {
+          "field": "Mean_Income_per_Week",
+          "order": "descending"
+        }
+      ],
+      "groupby": [
+        "Year"
+      ]
+    },
+    {
+      "#comment": "Filter to the number of states chosen on the Top N slider.",
+      "filter": "datum.rank <= Top_n_states"
+    },
+    {
+      "#comment": "Alias the income value for use in tooltips.",
+      "calculate": "datum.Mean_Income_per_Week",
+      "as": "income_aud"
+    }
+  ],
+  "encoding": {
+    "x": {
+      "field": "date",
+      "timeUnit": "year",
+      "type": "temporal",
+      "axis": {
+        "labelAngle": 0,
+        "labelFontSize": 12,
+        "title": "Year"
+      }
+    },
+    "y": {
+      "field": "rank",
+      "type": "quantitative",
+      "sort": "descending",
+      "scale": {
+        "domain": [
+          0.5,
+          8.5
+        ]
+      },
+      "axis": {
+        "labelAngle": 0,
+        "labelFontSize": 12,
+        "tickMinStep": 1,
+        "tickCount": 8,
+        "titleFontSize": 14
+      },
+      "title": "Rank Based on Weekly Income"
+    },
+    "tooltip": [
+      {
+        "field": "State",
+        "type": "nominal",
+        "title": "State/Territory:"
+      },
+      {
+        "field": "date",
+        "timeUnit": "year",
+        "type": "temporal",
+        "title": "Year:"
+      },
+      {
+        "field": "income_aud",
+        "type": "quantitative",
+        "title": "Mean weekly income (A$):",
+        "format": ",.0f"
+      }
+    ]
+  },
+  "layer": [
+    {
+      "#comment": "Lines trace each state's changing rank over time.",
+      "mark": {
+        "type": "line",
+        "interpolate": "monotone"
+      },
+      "encoding": {
+        "color": {
+          "field": "State",
+          "type": "nominal",
+          "scale": {
+            "domain": [
+              "Australian Capital Territory",
+              "New South Wales",
+              "Northern Territory",
+              "Queensland",
+              "South Australia",
+              "Tasmania",
+              "Victoria",
+              "Western Australia"
+            ],
+            "scheme": "tableau10"
+          },
+          "legend": {
+            "orient": "bottom",
+            "direction": "horizontal",
+            "title": "State / Territory",
+            "columns": 8,
+            "symbolType": "circle"
+          }
+        },
+        "size": {
+          "condition": {
+            "param": "sel_state",
+            "empty": false,
+            "value": 5
+          },
+          "value": 1
+        }
+      }
+    },
+    {
+      "#comment": "Thick ticks emphasise whichever states are toggled via the legend.",
+      "params": [
+        {
+          "name": "sel_state",
+          "select": {
+            "type": "point",
+            "on": "click",
+            "fields": [
+              "State"
+            ]
+          },
+          "bind": "legend"
+        }
+      ],
+      "mark": {
+        "type": "tick",
+        "thickness": 5
+      },
+      "encoding": {
+        "color": {
+          "condition": {
+            "param": "sel_state",
+            "empty": false,
+            "value": "darkgrey"
+          },
+          "field": "State",
+          "type": "nominal",
+          "scale": {
+            "domain": [
+              "Australian Capital Territory",
+              "New South Wales",
+              "Northern Territory",
+              "Queensland",
+              "South Australia",
+              "Tasmania",
+              "Victoria",
+              "Western Australia"
+            ],
+            "scheme": "tableau10"
+          },
+          "legend": {
+            "orient": "bottom",
+            "direction": "horizontal",
+            "title": "State / Territory",
+            "columns": 8,
+            "symbolType": "circle"
+          }
+        }
+      }
+    },
+    {
+      "#comment": "Static annotation calling out Tasmania's long-run lower rank.",
+      "data": {
+        "url": "../data/Australia_Household_Income_2007_2020.csv",
+        "format": {
+          "type": "csv",
+          "parse": {
+            "Mean_Income_per_Week": "number"
+          }
+        }
+      },
+      "transform": [
+        {
+          "window": [
+            {
+              "op": "rank",
+              "as": "rank"
+            }
+          ],
+          "sort": [
+            {
+              "field": "Mean_Income_per_Week",
+              "order": "descending"
+            }
+          ],
+          "groupby": [
+            "Year"
+          ]
+        },
+        {
+          "filter": "datum.State == 'Tasmania' && datum.Year == '2017–18'"
+        },
+        {
+          "calculate": "datetime(parseInt(substring(datum.Year,0,4)), 6, 30)",
+          "as": "date"
+        }
+      ],
+      "mark": {
+        "type": "text",
+        "align": "center",
+        "dx": 0,
+        "dy": -14,
+        "fontSize": 12,
+        "fontWeight": "bold",
+        "color": "#edc948"
+      },
+      "encoding": {
+        "x": {
+          "field": "date",
+          "type": "temporal",
+          "timeUnit": "year"
+        },
+        "y": {
+          "field": "rank",
+          "type": "quantitative"
+        },
+        "text": {
+          "value": "Tasmania tends to rank lowest across the years"
+        }
+      }
+    }
+  ],
+  "config": {
+    "view": {
+      "stroke": null
+    },
+    "axis": {
+      "gridColor": "#e5e7eb",
+      "tickColor": "#e5e7eb",
+      "labelColor": "#6b7280",
+      "titleColor": "#334155"
+    },
+    "legend": {
+      "titleColor": "#334155",
+      "labelColor": "#334155"
+    }
+  }
+}
