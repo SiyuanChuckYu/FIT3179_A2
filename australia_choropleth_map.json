@@ -1,0 +1,202 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "#comment": "Choropleth map showing August 2025 unemployment rates with hover tooltips and annotations.",
+  "description": "Choropleth showing August 2025 unemployment by Australian state with hover highlight and annotation callout.",
+  "width": "container",
+  "height": 620,
+  "background": null,
+  "padding": 0,
+  "config": {
+    "view": {
+      "stroke": null
+    },
+    "legend": {
+      "titleFontSize": 12,
+      "labelFontSize": 11,
+      "symbolType": "square"
+    },
+    "axis": {
+      "gridColor": "#d9e2ea",
+      "tickColor": "#d9e2ea",
+      "labelColor": "#334155",
+      "titleColor": "#334155"
+    }
+  },
+  "projection": {
+    "type": "mercator",
+    "center": [
+      134,
+      -25
+    ],
+    "scale": 760
+  },
+  "layer": [
+    {
+      "#comment": "Draw faint graticule gridlines to retain geographic orientation.",
+      "name": "graticules",
+      "data": {
+        "url": "../ne_50m.json",
+        "format": {
+          "type": "topojson",
+          "feature": "ne_50m_graticules_15"
+        }
+      },
+      "mark": {
+        "type": "geoshape",
+        "fill": null,
+        "stroke": "#d9e2ea",
+        "opacity": 0.7,
+        "strokeWidth": 0.7
+      }
+    },
+    {
+      "#comment": "Shade each state by unemployment rate and configure hover + tooltip interactions.",
+      "name": "states",
+      "data": {
+        "url": "../ne_50m.json",
+        "format": {
+          "type": "topojson",
+          "feature": "ne_50m_admin_1_states_provinces"
+        }
+      },
+      "transform": [
+        {
+          "#comment": "Keep only Australian admin regions from the global TopoJSON.",
+          "filter": "datum.properties.admin == 'Australia'"
+        },
+        {
+          "#comment": "Lookup unemployment rate for each state by name.",
+          "lookup": "properties.name",
+          "from": {
+            "data": {
+              "url": "../data/unemployment_aug2025.csv"
+            },
+            "key": "state",
+            "fields": [
+              "rate"
+            ]
+          }
+        }
+      ],
+      "mark": {
+        "type": "geoshape",
+        "stroke": "#ffffff",
+        "strokeWidth": 1
+      },
+      "encoding": {
+        "color": {
+          "field": "rate",
+          "type": "quantitative",
+          "title": "Unemployment rate (%)",
+          "scale": {
+            "scheme": "blues",
+            "reverse": false
+          },
+          "legend": {
+            "orient": "bottom",
+            "direction": "horizontal",
+            "gradientLength": 280,
+            "gradientThickness": 12,
+            "offset": 8
+          }
+        },
+        "fillOpacity": {
+          "condition": {
+            "selection": "hover",
+            "value": 1
+          },
+          "value": 0.85
+        },
+        "tooltip": [
+          {
+            "field": "properties.name",
+            "type": "nominal",
+            "title": "State/Territory:"
+          },
+          {
+            "field": "rate",
+            "type": "quantitative",
+            "title": "Unemployment (%):",
+            "format": ".1f"
+          }
+        ]
+      },
+      "selection": {
+        "hover": {
+          "type": "single",
+          "on": "mouseover",
+          "empty": "none"
+        }
+      }
+    },
+    {
+      "#comment": "Arrow/text annotations from CSV highlight narrative callouts on the map.",
+      "data": {
+        "url": "../data/annotations.csv",
+        "format": {
+          "type": "csv"
+        }
+      },
+      "encoding": {
+        "longitude": {
+          "field": "Longitude",
+          "type": "quantitative"
+        },
+        "latitude": {
+          "field": "Latitude",
+          "type": "quantitative"
+        }
+      },
+      "layer": [
+        {
+          "#comment": "Arrow glyph pointing at the highlighted location.",
+          "mark": {
+            "type": "point",
+            "size": 900,
+            "shape": "arrow",
+            "color": "#111827",
+            "dy": -100,
+            "strokeWidth": 2,
+            "fill": "#111827"
+          }
+        },
+        {
+          "#comment": "First line of annotation text.",
+          "mark": {
+            "type": "text",
+            "align": "left",
+            "dx": -120,
+            "dy": 24,
+            "fontStyle": "italic",
+            "fontWeight": "bold",
+            "fontSize": 12,
+            "color": "#111827"
+          },
+          "encoding": {
+            "text": {
+              "field": "text_annotation"
+            }
+          }
+        },
+        {
+          "#comment": "Second line of annotation text (optional).",
+          "mark": {
+            "type": "text",
+            "align": "left",
+            "dx": -120,
+            "dy": 44,
+            "fontStyle": "italic",
+            "fontWeight": "bold",
+            "fontSize": 12,
+            "color": "#111827"
+          },
+          "encoding": {
+            "text": {
+              "field": "text_annotation2"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
