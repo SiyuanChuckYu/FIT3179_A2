@@ -1,0 +1,984 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "autosize": "pad",
+  "background": null,
+  "title": null,
+  "config": {
+    "axis": {
+      "gridColor": "#e5e7eb",
+      "tickColor": "#e5e7eb",
+      "labelColor": "#6b7280",
+      "titleColor": "#334155",
+      "labelFontSize": 11
+    },
+    "legend": {
+      "labelColor": "#334155",
+      "titleColor": "#334155"
+    }
+  },
+  "width": 980,
+  "height": 540,
+  "padding": {
+    "left": 10,
+    "right": 20,
+    "top": 30,
+    "bottom": 20
+  },
+  "signals": [
+    {
+      "#comment": "Slider chooses how many leading states to show.",
+      "name": "topn",
+      "description": "How many bars to show",
+      "value": 8,
+      "bind": {
+        "name": "Top N:",
+        "input": "range",
+        "min": 3,
+        "max": 8,
+        "step": 1
+      }
+    },
+    {
+      "#comment": "Dropdown filters to a specific state or shows all.",
+      "name": "stateFilter",
+      "description": "Filter to a single state (or All)",
+      "value": "All",
+      "bind": {
+        "name": "State:",
+        "input": "select",
+        "options": [
+          "All",
+          "New South Wales",
+          "Victoria",
+          "Queensland",
+          "South Australia",
+          "Western Australia",
+          "Tasmania",
+          "Northern Territory",
+          "Australian Capital Territory"
+        ]
+      }
+    },
+    {
+      "name": "barHeight",
+      "description": "Normalised bar height 0..1",
+      "value": 0.7
+    },
+    {
+      "name": "duration",
+      "description": "Seconds per frame",
+      "value": 1.2
+    },
+    {
+      "name": "run",
+      "value": true,
+      "on": [
+        {
+          "events": "@restart:click",
+          "update": "true",
+          "force": true,
+          "consume": true
+        },
+        {
+          "events": "click",
+          "update": "!run",
+          "force": true
+        }
+      ]
+    },
+    {
+      "name": "timer",
+      "init": "now()",
+      "on": [
+        {
+          "events": {
+            "type": "timer",
+            "throttle": 16.6
+          },
+          "update": "run?now():timer"
+        }
+      ]
+    },
+    {
+      "name": "deltaTime",
+      "init": "0",
+      "on": [
+        {
+          "events": {
+            "type": "timer",
+            "throttle": 16.6
+          },
+          "update": "!run?now()-timer:timer-deltaTime > start+duration*1000?0: deltaTime"
+        }
+      ]
+    },
+    {
+      "name": "start",
+      "init": "timer",
+      "on": [
+        {
+          "events": {
+            "signal": "timer"
+          },
+          "update": "timer-deltaTime < start+duration*1000 ? start : timer"
+        },
+        {
+          "events": {
+            "signal": "duration"
+          },
+          "update": "timer+duration*1000"
+        }
+      ]
+    },
+    {
+      "name": "year",
+      "description": "Current year",
+      "init": "extent[0]-1",
+      "on": [
+        {
+          "events": {
+            "signal": "start"
+          },
+          "force": true,
+          "update": "year < extent[1]-1 ? year+1 : extent[1]"
+        },
+        {
+          "events": "@restart:click",
+          "update": "extent[0]",
+          "force": true
+        }
+      ]
+    },
+    {
+      "name": "t",
+      "description": "0..1 linear tween",
+      "init": "0",
+      "on": [
+        {
+          "events": {
+            "signal": "timer"
+          },
+          "update": "(timer-deltaTime-start)/(duration*1000)"
+        },
+        {
+          "events": "@restart:click",
+          "update": "0"
+        }
+      ]
+    },
+    {
+      "name": "e",
+      "description": "easing function",
+      "update": "t"
+    },
+    {
+      "name": "buttonHover",
+      "value": null,
+      "on": [
+        {
+          "events": "@play:mouseover",
+          "update": "'play'",
+          "force": true
+        },
+        {
+          "events": "@restart:mouseover",
+          "update": "'restart'",
+          "force": true
+        },
+        {
+          "events": "@play:mouseout",
+          "update": "null",
+          "force": true
+        },
+        {
+          "events": "@restart:mouseout",
+          "update": "null",
+          "force": true
+        }
+      ]
+    }
+  ],
+  "data": [
+    {
+      "#comment": "Raw unemployment data by state/year.",
+      "name": "input",
+      "url": "../data/unemployment_states_yearly.csv",
+      "format": {
+        "type": "csv",
+        "parse": {
+          "Year": "number",
+          "Rate": "number"
+        }
+      }
+    },
+    {
+      "#comment": "Distinct state names used for colour domains and labels.",
+      "name": "barNames",
+      "source": "input",
+      "transform": [
+        {
+          "type": "filter",
+          "expr": "stateFilter=='All' || datum.State==stateFilter"
+        },
+        {
+          "type": "aggregate",
+          "fields": [
+            "State"
+          ],
+          "ops": [
+            "max"
+          ],
+          "groupby": [
+            "State"
+          ]
+        }
+      ]
+    },
+    {
+      "#comment": "Main racing bars pipeline: ranks, interpolation and eased positions.",
+      "name": "bars",
+      "source": "input",
+      "transform": [
+        {
+          "type": "filter",
+          "expr": "stateFilter=='All' || datum.State==stateFilter"
+        },
+        {
+          "type": "extent",
+          "field": "Year",
+          "signal": "extent"
+        },
+        {
+          "type": "filter",
+          "expr": "year<extent[0]?datum.Year ==extent[0] || datum.Year ==extent[0]+1:datum.Year == year || datum.Year == year+1"
+        },
+        {
+          "type": "window",
+          "sort": {
+            "field": "Rate",
+            "order": "descending"
+          },
+          "ops": [
+            "rank"
+          ],
+          "as": [
+            "Rank"
+          ],
+          "groupby": [
+            "Year"
+          ]
+        },
+        {
+          "type": "window",
+          "sort": {
+            "field": "Year",
+            "order": "ascending"
+          },
+          "ops": [
+            "lead",
+            "lead"
+          ],
+          "fields": [
+            "Rate",
+            "Rank"
+          ],
+          "as": [
+            "Rate2",
+            "Rank2"
+          ],
+          "groupby": [
+            "State"
+          ]
+        },
+        {
+          "type": "filter",
+          "expr": "year<extent[0]?datum.Year ==extent[0]:datum.Year == year"
+        },
+        {
+          "type": "filter",
+          "expr": "datum.Rank <= topn+1 || datum.Rank2<=topn+1"
+        },
+        {
+          "type": "formula",
+          "as": "Rank",
+          "expr": "datum.Rank <=topn?datum.Rank:topn+1"
+        },
+        {
+          "type": "formula",
+          "as": "Rate2",
+          "expr": "datum.Rate2 ==null? datum.Rate:datum.Rate2"
+        },
+        {
+          "type": "formula",
+          "as": "Rank2",
+          "expr": "datum.Rank2 ==null? datum.Rank:datum.Rank2"
+        },
+        {
+          "type": "formula",
+          "as": "y",
+          "expr": "datum.Rank <=topn? round(scale('y',datum.Rank)):height"
+        },
+        {
+          "type": "formula",
+          "as": "y2",
+          "expr": "datum.Rank2 <=topn? round(scale('y',datum.Rank2)):height"
+        },
+        {
+          "type": "formula",
+          "as": "xEased",
+          "expr": "datum.Rate + round((datum.Rate2 - datum.Rate) * e)"
+        },
+        {
+          "type": "formula",
+          "as": "yEased",
+          "expr": "round(datum.y + (datum.y2- datum.y) * e)"
+        }
+      ]
+    },
+    {
+      "#comment": "National average line and label for additional context.",
+      "name": "national",
+      "source": "input",
+      "transform": [
+        {
+          "type": "filter",
+          "expr": "stateFilter=='All' || datum.State==stateFilter"
+        },
+        {
+          "type": "aggregate",
+          "groupby": [
+            "Year"
+          ],
+          "ops": [
+            "mean"
+          ],
+          "fields": [
+            "Rate"
+          ],
+          "as": [
+            "Rate"
+          ]
+        },
+        {
+          "type": "window",
+          "sort": {
+            "field": "Year",
+            "order": "ascending"
+          },
+          "ops": [
+            "lead"
+          ],
+          "fields": [
+            "Rate"
+          ],
+          "as": [
+            "Rate2"
+          ]
+        },
+        {
+          "type": "formula",
+          "as": "Rate2",
+          "expr": "datum.Rate2 ==null? datum.Rate:datum.Rate2"
+        },
+        {
+          "type": "filter",
+          "expr": "year<extent[0]?datum.Year ==extent[0]:datum.Year == year"
+        },
+        {
+          "type": "formula",
+          "as": "xEased",
+          "expr": "datum.Rate + round((datum.Rate2 - datum.Rate) * e)"
+        },
+        {
+          "type": "formula",
+          "as": "YearSymbol",
+          "expr": "datum.Year != extent[1]? lerp([datum.Year,datum.Year+1],t):extent[1]"
+        }
+      ]
+    },
+    {
+      "name": "dummy",
+      "values": [
+        {}
+      ]
+    }
+  ],
+  "legends": [],
+  "scales": [
+    {
+      "name": "x",
+      "type": "linear",
+      "domain": {
+        "data": "bars",
+        "field": "xEased"
+      },
+      "range": {
+        "signal": "[0,width-100]"
+      },
+      "zero": true,
+      "nice": true
+    },
+    {
+      "name": "y",
+      "type": "band",
+      "domain": {
+        "signal": "sequence(1,topn+1,1)"
+      },
+      "range": "height",
+      "padding": 0
+    }, 
+    { 
+      "name": "color1",
+      "type": "ordinal",
+      "range": [
+        "#1f77b4",
+        "#ff7f0e",
+        "#2ca02c",
+        "#d62728",
+        "#9467bd",
+        "#8c564b",
+        "#e377c2",
+        "#7f7f7f"
+      ],
+      "domain": {
+        "data": "barNames",
+        "field": "State",
+        "sort": true
+      }
+    },
+    {
+      "name": "color2",
+      "type": "ordinal",
+      "range": [
+        "#6baed6",
+        "#fdae6b",
+        "#74c476",
+        "#fb6a4a",
+        "#9e9ac8",
+        "#bd925a",
+        "#f7b6d2",
+        "#bdbdbd"
+      ],
+      "domain": {
+        "data": "barNames",
+        "field": "State",
+        "sort": true
+      }
+    },
+    {
+      "name": "years",
+      "type": "linear",
+      "domain": {
+        "data": "input",
+        "field": "Year"
+      },
+      "range": {
+        "signal": "[0,width]"
+      },
+      "zero": false,
+      "nice": false
+    }
+  ],
+  "layout": {
+    "columns": 1,
+    "padding": {
+      "row": 0
+    }
+  },
+  "marks": [
+    {
+      "#comment": "Top panel renders the animated bars, labels and controls.",  
+      "name": "top",
+      "type": "group",
+      "axes": [
+        {
+          "orient": "top",
+          "scale": "x",
+          "grid": true,
+          "domain": false,
+          "offset": 5,
+          "labelFontSize": 11,
+          "ticks": false,
+          "gridColor": "#d9e2ea",
+          "labelColor": "#334155",
+          "zindex": 1,
+          "encode": {
+            "labels": {
+              "update": {
+                "text": {
+                  "signal": "datum.value==0?'':format(datum.value, '.1f') + '%'"
+                }
+              }
+            }
+          }
+        },
+        {
+          "orient": "left",
+          "scale": "y",
+          "labels": false,
+          "ticks": false,
+          "zindex": 3
+        }
+      ],
+      "marks": [
+        {
+          "name": "raceBars",
+          "from": {
+            "data": "bars"
+          },
+          "type": "rect",
+          "encode": {
+            "update": {
+              "y": {
+                "signal": "datum.yEased"
+              },
+              "height": {
+                "signal": "bandwidth('y')*barHeight"
+              },
+              "x": {
+                "scale": "x",
+                "field": "xEased"
+              },
+              "x2": {
+                "scale": "x",
+                "value": 0
+              },
+              "fill": {
+                "value": {
+                  "gradient": "linear",
+                  "stops": [
+                    {
+                      "offset": 0,
+                      "color": "#93c5fd"
+                    },
+                    {
+                      "offset": 1,
+                      "color": "#3b82f6"
+                    }
+                  ],
+                  "x1": 0,
+                  "x2": 0,
+                  "y1": 0,
+                  "y2": 1
+                }
+              },
+              "tooltip": {
+                "signal": "{'State/Territory:': datum.State, 'Year:': year, 'Unemployment:': format(datum.xEased,'#.1f') + '%', 'Rank:': format(datum.Rank,'02')}"
+              },
+              "cornerRadiusTopRight": {
+                "value": 4
+              },
+              "cornerRadiusBottomRight": {
+                "value": 4
+              }
+            }
+          }
+        },
+        {
+          "name": "values",
+          "zindex": 2,
+          "from": {
+            "data": "bars"
+          },
+          "type": "text",
+          "encode": {
+            "update": {
+              "y": {
+                "signal": "datum.yEased + ((bandwidth('y')*barHeight)/2)"
+              },
+              "x": {
+                "scale": "x",
+                "field": "xEased",
+                "offset": -6
+              },
+              "fill": {
+                "signal": "datum.Rank <=topn? '#ffffff': ''"
+              },
+              "text": {
+                "signal": "format(datum.xEased,'#.1f') + '%'"
+              },
+              "align": {
+                "value": "right"
+              },
+              "baseline": {
+                "value": "middle"
+              },
+              "fontSize": {
+                "value": 12
+              },
+              "tooltip": {
+                "signal": "{'State/Territory:': datum.State, 'Year:': year, 'Unemployment:': format(datum.xEased,'#.1f') + '%', 'Rank:': format(datum.Rank,'02')}"
+              }
+            }
+          }
+        },
+        {
+          "name": "namesSpacing",
+          "description": "Invisible names for spacing",
+          "from": {
+            "data": "barNames"
+          },
+          "type": "text",
+          "encode": {
+            "update": {
+              "y": {
+                "signal": "0"
+              },
+              "x": {
+                "value": -5
+              },
+              "fill": {
+                "signal": "''"
+              },
+              "fontSize": {
+                "value": 12
+              },
+              "limit": {
+                "value": 160
+              },
+              "text": {
+                "field": "State"
+              },
+              "baseline": {
+                "value": "middle"
+              },
+              "align": {
+                "value": "right"
+              },
+              "tooltip": {
+                "signal": "{'State/Territory:': datum.State, 'Year:': year, 'Unemployment:': format(datum.xEased,'#.1f') + '%', 'Rank:': format(datum.Rank,'02')}"
+              }
+            }
+          }
+        },
+        {
+          "name": "names",
+          "from": {
+            "data": "bars"
+          },
+          "type": "text",
+          "encode": {
+            "update": {
+              "y": {
+                "signal": "datum.yEased + ((bandwidth('y')*barHeight)/2)"
+              },
+              "x": {
+                "value": -5
+              },
+              "fill": {
+                "signal": "datum.Rank <=topn? '#334155': ''"
+              },
+              "limit": {
+                "value": 160
+              },
+              "text": {
+                "signal": "datum.State + ' | ' + format(datum.Rank,'02') "
+              },
+              "fontSize": {
+                "value": 12
+              },
+              "baseline": {
+                "value": "middle"
+              },
+              "align": {
+                "value": "right"
+              }
+            }
+          }
+        },
+        {
+          "type": "text",
+          "zindex": 10,
+          "from": {
+            "data": "national"
+          },
+          "encode": {
+            "update": {
+              "text": {
+                "signal": "year"
+              },
+              "align": {
+                "value": "right"
+              },
+              "fill": {
+                "value": "#6b7280"
+              },
+              "x": {
+                "signal": "width"
+              },
+              "y": {
+                "signal": "height-50"
+              },
+              "fontSize": {
+                "value": 90
+              },
+              "fontWeight": {
+                "value": "600"
+              }
+            }
+          }
+        },
+        {
+          "type": "text",
+          "zindex": 10,
+          "from": {
+            "data": "national"
+          },
+          "encode": {
+            "update": {
+              "text": {
+                "signal": "'Australia Avg ' + format(datum.xEased,'#.1f') + '%'"
+              },
+              "align": {
+                "value": "right"
+              },
+              "fill": {
+                "value": "#6b7280"
+              },
+              "x": {
+                "signal": "width"
+              },
+              "y": {
+                "signal": "height-20"
+              },
+              "fontSize": {
+                "value": 24
+              }
+            }
+          }
+        },
+        {
+          "type": "symbol",
+          "zindex": 10,
+          "name": "restartIcon",
+          "interactive": false,
+          "from": {
+            "data": "dummy"
+          },
+          "encode": {
+            "update": {
+              "x": {
+                "signal": "width-80"
+              },
+              "y": {
+                "signal": "height-10"
+              },
+              "size": {
+                "value": 6
+              },
+              "shape": {
+                "value": "M17 2.91666C9.18 2.91666 2.83333 9.45 2.83333 17.5C2.83333 25.55 9.18 32.0833 17 32.0833C24.82 32.0833 31.1667 25.55 31.1667 17.5C31.1667 9.45 24.82 2.91666 17 2.91666ZM17 26.9792C12.3108 26.9792 8.5 23.0562 8.5 18.2292H11.3333C11.3333 21.4521 13.8692 24.0625 17 24.0625C20.1308 24.0625 22.6667 21.4521 22.6667 18.2292C22.6667 14.9625 20.0458 12.2646 16.7733 12.4104L18.9975 14.7L17 16.7708L11.3333 10.9375L17 5.10416L18.9975 7.16041L16.7308 9.49375C21.6467 9.33333 25.5 13.3875 25.5 18.2292C25.5 23.0562 21.6892 26.9792 17 26.9792Z"
+              },
+              "opacity": {
+                "signal": "0.8"
+              },
+              "fill": {
+                "signal": "buttonHover=='restart'?'#0061c2':'grey'"
+              }
+            }
+          }
+        },
+        {
+          "type": "symbol",
+          "zindex": 10,
+          "name": "restart",
+          "from": {
+            "data": "dummy"
+          },
+          "encode": {
+            "update": {
+              "x": {
+                "signal": "width-80"
+              },
+              "y": {
+                "signal": "height-10"
+              },
+              "size": {
+                "value": 6
+              },
+              "shape": {
+                "value": "M17.5 2.91666C9.45 2.91666 2.91667 9.45 2.91667 17.5C2.91667 25.55 9.45 32.0833 17.5 32.0833C25.55 32.0833 32.0833 25.55 32.0833 17.5C32.0833 9.45 25.55 2.91666 17.5 2.91666Z"
+              },
+              "opacity": {
+                "value": 0
+              },
+              "cursor": {
+                "signal": "buttonHover=='restart'?'pointer':'default'"
+              }
+            }
+          }
+        },
+        {
+          "type": "symbol",
+          "zindex": 10,
+          "name": "playIcon",
+          "interactive": false,
+          "from": {
+            "data": "dummy"
+          },
+          "encode": {
+            "update": {
+              "x": {
+                "signal": "width-40"
+              },
+              "y": {
+                "signal": "height-10"
+              },
+              "size": {
+                "value": 6
+              },
+              "shape": {
+                "signal": "!run? 'M17 2.91667C9.18001 2.91667 2.83334 9.45 2.83334 17.5C2.83334 25.55 9.18001 32.0833 17 32.0833C24.82 32.0833 31.1667 25.55 31.1667 17.5C31.1667 9.45 24.82 2.91667 17 2.91667ZM14.1667 24.0625V10.9375L22.6667 17.5L14.1667 24.0625Z':'M17.5 2.91666C9.45 2.91666 2.91667 9.45 2.91667 17.5C2.91667 25.55 9.45 32.0833 17.5 32.0833C25.55 32.0833 32.0833 25.55 32.0833 17.5C32.0833 9.45 25.55 2.91666 17.5 2.91666ZM16.0417 23.3333H13.125V11.6667H16.0417V23.3333ZM21.875 23.3333H18.9583V11.6667H21.875V23.3333Z'"
+              },
+              "opacity": {
+                "value": 0.8
+              },
+              "fill": {
+                "signal": "buttonHover=='play'?'#0061c2':'grey'"
+              }
+            }
+          }
+        },
+        {
+          "type": "symbol",
+          "zindex": 10,
+          "name": "play",
+          "from": {
+            "data": "dummy"
+          },
+          "encode": {
+            "update": {
+              "x": {
+                "signal": "width-40"
+              },
+              "y": {
+                "signal": "height-10"
+              },
+              "size": {
+                "value": 6
+              },
+              "shape": {
+                "value": "M17.5 2.91666C9.45 2.91666 2.91667 9.45 2.91667 17.5C2.91667 25.55 9.45 32.0833 17.5 32.0833C25.55 32.0833 32.0833 25.55 32.0833 17.5C32.0833 9.45 25.55 2.91666 17.5 2.91666Z"
+              },
+              "opacity": {
+                "value": 0
+              },
+              "cursor": {
+                "signal": "buttonHover=='play'?'pointer':'default'"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "#comment": "Bottom panel holds the timeline scrubber triangle and tick labels.",
+      "name": "bottom",
+      "encode": {
+        "update": {
+          "height": {
+            "value": 10
+          }
+        }
+      },
+      "type": "group",
+      "marks": [
+        {
+          "type": "symbol",
+          "from": {
+            "data": "national"
+          },
+          "encode": {
+            "update": {
+              "x": {
+                "scale": "years",
+                "field": "YearSymbol"
+              },
+              "y": {
+                "signal": "(-sqrt(200)/2)"
+              },
+              "size": {
+                "value": 200
+              },
+              "shape": {
+                "value": "triangle-down"
+              },
+              "opacity": {
+                "value": 1
+              },
+              "fill": {
+                "value": "grey"
+              }
+            }
+          }
+        }
+      ],
+      "axes": [
+        {
+          "orient": "bottom",
+          "scale": "years",
+          "tickCount": 60,
+          "labelColor": "#334155",
+          "labelPadding": 10,
+          "labelFontSize": 12,
+          "tickSize": {
+            "signal": "datum.value%5==0 || datum.value==extent[1]?-6:-3"
+          },
+          "format": "",
+          "encode": {
+            "labels": {
+              "update": {
+                "text": {
+                  "signal": "datum.value%5==0 || datum.value==extent[1]?datum.value:''"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "#comment": "Footer note shows data source attribution.",
+      "type": "group",
+      "marks": [
+        {
+          "type": "text",
+          "data": [
+            {}
+          ],
+          "encode": {
+            "update": {
+              "text": {
+                "value": "Source: ABS (averaged monthly)"
+              },
+              "align": {
+                "value": "left"
+              },
+              "lineHeight": {
+                "value": 16
+              },
+              "fill": {
+                "value": "#666666"
+              },
+              "x": {
+                "signal": "0"
+              },
+              "y": {
+                "signal": "40"
+              },
+              "fontSize": {
+                "value": 11
+              },
+              "opacity": {
+                "value": 0.7
+              },
+              "font": {
+                "value": "Segoe UI "
+              }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
