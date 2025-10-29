@@ -1,0 +1,316 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "#comment": "Dual-view (detail + overview) showing household spending by state with brush filter.",
+  "description": "Stacked area with overview brush showing annual household spending by Australian state.",
+  "width": "container",
+  "autosize": {
+    "type": "fit-x",
+    "contains": "padding"
+  },
+  "background": null,
+  "spacing": 20,
+  "data": {
+    "url": "../data/household_spending_state_totals_annual.csv",
+    "format": {
+      "type": "csv",
+      "parse": {
+        "value_million_aud": "number",
+        "year": "number"
+      }
+    }
+  },
+  "transform": [
+    {
+      "#comment": "Create a temporal field so axes and brush use dates instead of plain numbers.",
+      "calculate": "datetime(datum.year, 6, 30)",
+      "as": "YearDate"
+    }
+  ],
+  "vconcat": [
+    {
+      "#comment": "Main stacked area chart with interactive highlight and legend selection.",
+      "width": "container",
+      "height": 360,
+      "layer": [
+        {
+          "mark": {
+            "type": "area",
+            "interpolate": "monotone"
+          },
+          "params": [
+            {
+              "name": "hover_state",
+              "select": {
+                "type": "point",
+                "fields": [
+                  "state"
+                ],
+                "on": "mouseover",
+                "clear": "mouseout"
+              }
+            },
+            {
+              "name": "sel_state",
+              "select": {
+                "type": "point",
+                "fields": [
+                  "state"
+                ]
+              },
+              "bind": "legend"
+            }
+          ],
+          "encoding": {
+            "x": {
+              "field": "YearDate",
+              "type": "temporal",
+              "axis": {
+                "title": "",
+                "grid": false,
+                "labelAngle": 0,
+                "format": "%Y",
+                "tickCount": {
+                  "interval": "year",
+                  "step": 1
+                }
+              },
+              "scale": {
+                "domain": {
+                  "param": "yearBrush"
+                }
+              }
+            },
+            "y": {
+              "field": "value_million_aud",
+              "type": "quantitative",
+              "title": "Household spending (A$ million)",
+              "stack": "zero"
+            },
+            "color": {
+              "field": "state",
+              "type": "nominal",
+              "title": "State / Territory",
+              "scale": {
+                "scheme": "tableau10"
+              }
+            },
+            "opacity": {
+              "condition": [
+                {
+                  "param": "hover_state",
+                  "value": 1
+                },
+                {
+                  "param": "sel_state",
+                  "value": 1
+                }
+              ],
+              "value": 0.35
+            },
+            "strokeWidth": {
+              "condition": [
+                {
+                  "param": "hover_state",
+                  "value": 1.2
+                },
+                {
+                  "param": "sel_state",
+                  "value": 1.2
+                }
+              ],
+              "value": 0.4
+            },
+            "tooltip": [
+              {
+                "field": "state",
+                "type": "nominal",
+                "title": "State / Territory:"
+              },
+              {
+                "field": "year",
+                "type": "quantitative",
+                "title": "Year:",
+                "format": "0"
+              },
+              {
+                "field": "value_million_aud",
+                "type": "quantitative",
+                "title": "Spending (A$ million):",
+                "format": ",.1f"
+              }
+            ]
+          }
+        },
+        {
+          "#comment": "Annotation text emphasising NSW contribution in the latest year.",
+          "transform": [
+            {
+              "filter": "datum.state == 'New South Wales'"
+            },
+            {
+              "joinaggregate": [
+                {
+                  "op": "sum",
+                  "field": "value_million_aud",
+                  "as": "total_year"
+                }
+              ],
+              "groupby": [
+                "YearDate"
+              ]
+            },
+            {
+              "calculate": "datum.value_million_aud / datum.total_year",
+              "as": "share"
+            },
+            {
+              "calculate": "'NSW contributes the most in household spending.'",
+              "as": "label_text"
+            },
+            {
+              "filter": "year(datum.YearDate) == 2024"
+            }
+          ],
+          "mark": {
+            "type": "text",
+            "align": "right",
+            "dx": -14,
+            "dy": -128,
+            "fontSize": 12,
+            "fontWeight": "bold",
+            "color": "#000000",
+            "clip": true
+          },
+          "encoding": {
+            "x": {
+              "field": "YearDate",
+              "type": "temporal",
+              "scale": {
+                "domain": {
+                  "param": "yearBrush"
+                }
+              }
+            },
+            "y": {
+              "field": "total_year",
+              "type": "quantitative"
+            },
+            "text": {
+              "field": "label_text",
+              "type": "nominal"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "#comment": "Overview chart aggregates to national total and provides the brush.",
+      "width": "container",
+      "height": 140,
+      "mark": {
+        "type": "area",
+        "interpolate": "monotone",
+        "line": {
+          "color": "#1d4ed8",
+          "strokeWidth": 1.6
+        },
+        "color": {
+          "gradient": "linear",
+          "x1": 0,
+          "x2": 0,
+          "y1": 1,
+          "y2": 0,
+          "stops": [
+            {
+              "offset": 0,
+              "color": "rgba(59, 130, 246, 0)"
+            },
+            {
+              "offset": 1,
+              "color": "rgba(37, 99, 235, 0.85)"
+            }
+          ]
+        }
+      },
+      "params": [
+        {
+          "name": "yearBrush",
+          "select": {
+            "type": "interval",
+            "encodings": [
+              "x"
+            ]
+          }
+        }
+      ],
+      "transform": [
+        {
+          "aggregate": [
+            {
+              "op": "sum",
+              "field": "value_million_aud",
+              "as": "NationalTotal"
+            }
+          ],
+          "groupby": [
+            "YearDate",
+            "year"
+          ]
+        }
+      ],
+      "encoding": {
+        "x": {
+          "field": "YearDate",
+          "type": "temporal",
+          "axis": {
+            "title": "Year",
+            "labelAngle": 0,
+            "format": "%Y",
+            "tickCount": {
+              "interval": "year",
+              "step": 1
+            }
+          }
+        },
+        "y": {
+          "field": "NationalTotal",
+          "type": "quantitative",
+          "title": "National household spending (A$ million)",
+          "axis": {
+            "tickCount": 3,
+            "grid": false
+          }
+        },
+        "tooltip": [
+          {
+            "field": "year",
+            "type": "quantitative",
+            "title": "Year:",
+            "format": "0"
+          },
+          {
+            "field": "NationalTotal",
+            "type": "quantitative",
+            "title": "National household spending: (A$ million)",
+            "format": ",.1f"
+          }
+        ]
+      }
+    }
+  ],
+  "config": {
+    "view": {
+      "stroke": null
+    },
+    "axis": {
+      "gridColor": "#e5e7eb",
+      "tickColor": "#e5e7eb",
+      "labelColor": "#6b7280",
+      "titleColor": "#334155"
+    },
+    "legend": {
+      "titleColor": "#334155",
+      "labelColor": "#334155"
+    }
+  }
+}
