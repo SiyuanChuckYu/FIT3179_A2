@@ -1,0 +1,219 @@
+{
+  "name": "GVA (Chain volume) — Jun-2024",
+  "children": [
+    {
+      "name": "Agriculture, forestry and fishing",
+      "children": [
+        {
+          "name": "Agriculture",
+          "value": 61757.0
+        },
+        {
+          "name": "Forestry & fishing",
+          "value": 9086.0
+        }
+      ]
+    },
+    {
+      "name": "Mining (B)",
+      "children": [
+        {
+          "name": "Coal mining",
+          "value": 106426.0
+        },
+        {
+          "name": "Oil and gas extraction",
+          "value": 98131.0
+        },
+        {
+          "name": "Iron ore mining",
+          "value": 97253.0
+        },
+        {
+          "name": "Other mining",
+          "value": 36860.0
+        },
+        {
+          "name": "Mining (excluding exploration and mining support services)",
+          "value": 338669.0
+        },
+        {
+          "name": "Exploration and mining support services",
+          "value": 13432.0
+        }
+      ]
+    },
+    {
+      "name": "Manufacturing (C)",
+      "children": [
+        {
+          "name": "Food, beverage and tobacco products",
+          "value": 33084.0
+        },
+        {
+          "name": "Petroleum, coal, chemical and rubber products",
+          "value": 23623.0
+        },
+        {
+          "name": "Metal products",
+          "value": 22990.0
+        },
+        {
+          "name": "Machinery and equipment",
+          "value": 30633.0
+        },
+        {
+          "name": "Other manufacturing",
+          "value": 27698.0
+        }
+      ]
+    },
+    {
+      "name": "Electricity, gas, water and waste services (D)",
+      "children": [
+        {
+          "name": "Electricity",
+          "value": 24513.0
+        },
+        {
+          "name": "Gas",
+          "value": 2353.0
+        },
+        {
+          "name": "Water supply and waste services",
+          "value": 21613.0
+        }
+      ]
+    },
+    {
+      "name": "Construction (E)",
+      "children": [
+        {
+          "name": "Building construction",
+          "value": 39069.0
+        },
+        {
+          "name": "Heavy and civil engineering construction",
+          "value": 41842.0
+        },
+        {
+          "name": "Construction services",
+          "value": 94287.0
+        }
+      ]
+    },
+    {
+      "name": "Wholesale trade (F)",
+      "value": 96005.0
+    },
+    {
+      "name": "Retail trade (G)",
+      "value": 106477.0
+    },
+    {
+      "name": "Accommodation and food services (H)",
+      "value": 57083.0
+    },
+    {
+      "name": "Transport, postal and warehousing (I)",
+      "children": [
+        {
+          "name": "Road",
+          "value": 34159.0
+        },
+        {
+          "name": "Air and space transport",
+          "value": 14224.0
+        },
+        {
+          "name": "Rail, pipeline and other transport",
+          "value": 16020.0
+        },
+        {
+          "name": "Transport, postal and storage services",
+          "value": 50979.0
+        }
+      ]
+    },
+    {
+      "name": "Information media and telecommunications (J)",
+      "children": [
+        {
+          "name": "Telecommunications services",
+          "value": 23584.0
+        },
+        {
+          "name": "Other information and media services",
+          "value": 31037.0
+        }
+      ]
+    },
+    {
+      "name": "Financial and insurance services (K)",
+      "children": [
+        {
+          "name": "Finance",
+          "value": 117635.0
+        },
+        {
+          "name": "Other financial and insurance services",
+          "value": 61274.0
+        }
+      ]
+    },
+    {
+      "name": "Rental, hiring and real estate services (L)",
+      "children": [
+        {
+          "name": "Rental and hiring services",
+          "value": 10246.0
+        },
+        {
+          "name": "Property operators and real estate services",
+          "value": 56547.0
+        }
+      ]
+    },
+    {
+      "name": "Professional, scientific and technical services (M)",
+      "children": [
+        {
+          "name": "Computer system design and related services",
+          "value": 43266.0
+        },
+        {
+          "name": "Other professional, scientific and technical services",
+          "value": 142291.0
+        }
+      ]
+    },
+    {
+      "name": "Administrative and support services (N)",
+      "value": 85038.0
+    },
+    {
+      "name": "Public administration and safety (O)",
+      "value": 130533.0
+    },
+    {
+      "name": "Education and training (P)",
+      "value": 116187.0
+    },
+    {
+      "name": "Health care and social assistance (Q)",
+      "value": 198323.0
+    },
+    {
+      "name": "Arts and recreation services (R)",
+      "value": 19220.0
+    },
+    {
+      "name": "Other services (S)",
+      "value": 40474.0
+    },
+    {
+      "name": "Ownership of dwellings",
+      "value": 210853.0
+    }
+  ]
+}
