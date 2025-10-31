@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Australia Economic Snapshot 2025</title>
+    <script src="https://cdn.jsdelivr.net/npm/vega@5"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega-lite@5"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega-embed@6"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    <script src="js/gva_zoomable_sunburst.js"></script>
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1 class="title">Australia Economic Snapshot 2025</h1>
+
+      <div class="card" style="margin-top: 16px;">
+        <h2 class="subtitle">Choropleth Map: Unemployment by State/Territory (Aug 2025)</h2>
+        <p class="subtext">Each shade represents the August 2025 unemployment rate by state/territory. Hover to see the exact value and state name; use the legend to interpret the colour scale.</p>
+        <div id="vis-map"></div>
+        <div class="footnote">Source: <a href="https://www.abs.gov.au/statistics/labour/employment-and-unemployment/labour-force-australia/latest-release" target="_blank" rel="noopener noreferrer">ABS | TopoJSON Natural Earth</a></div>
+      </div>
+
+      <div class="card" style="margin-top: 16px;">
+        <h2 class="subtitle">Racing Bar: Unemployment (1978–Present)</h2>
+        <p class="subtext">Bars race through time to show how each state’s unemployment rate changes year by year. Use the filter to limit states and hover to see precise values.</p>
+        <div id="vis-race"></div>
+        <div class="footnote">Source: <a href="https://www.abs.gov.au/statistics/labour/employment-and-unemployment/labour-force-australia/aug-2025" target="_blank" rel="noopener noreferrer">ABS (averaged monthly)</a></div>
+      </div>
+      
+      <div class="card" style="margin-top: 16px;">
+        <h2 class="subtitle">Zoomable Sunburst: GVA by Industry (Chain volume, Jun 2024)</h2>
+        <p class="subtext">Hierarchical view of Gross Value Added by industry, measured in chain‑volume (A$ millions). This idiom shows the whole‑to‑parts structure: larger arcs indicate larger economic contribution. Click an arc to drill into sub‑industries; click the centre to zoom out. Insight: quickly see which industries (and sub‑industries) drive Australia’s GVA and how the mix is composed.</p>
+        <div id="vis-sunburst"></div>
+        <div class="footnote">Source: <a href="https://www.abs.gov.au/statistics/economy/national-accounts/australian-system-national-accounts/2023-24" target="_blank" rel="noopener noreferrer">ABS — GVA by Industry (chain volume)</a></div>
+      </div>
+
+      <div class="card" style="margin-top: 16px;">
+        <h2 class="subtitle">Overview & Detail: Household Spending (2013–2024)</h2>
+        <p class="subtext">Stacked area of annual household spending by state (A$ millions). The top panel shows each state’s contribution over time; the bottom overview (with brush) filters the period. This idiom reveals trend strength and composition: identify growth periods, compare states’ shares, and see when contribution shifts occur.</p>
+        <div id="vis-income"></div>
+        <div class="footnote">Source: <a href="https://www.abs.gov.au/statistics/economy/national-accounts/australian-system-national-accounts/2023-24#data-downloads" target="_blank" rel="noopener noreferrer">ABS — Australian System of National Accounts 2023–24</a></div>
+      </div>
+
+      <div class="card" style="margin-top: 16px;">
+        <h2 class="subtitle">Bump: Weekly Income Rank by State (2007–2020)</h2>
+        <p class="subtext">Bump chart ranking states by mean weekly household income (A$ per household). Lines trace rank over years; use the slider to choose the Top N and click legend to focus states. This idiom highlights relative standing and cross‑overs—who leads, who converges, and when rankings change.</p>
+        <div id="vis-bump"></div>
+        <div class="footnote">Source: <a href="https://www.abs.gov.au/statistics/economy/finance/household-income-and-wealth-australia/latest-release#data-downloads" target="_blank" rel="noopener noreferrer">ABS — Household income and wealth</a></div>
+      </div>
+      
+      <div style="text-align:right; color:#6b7280; font-size:12px; margin-top:12px;">
+        Author: Si Yuanyi — <a href="" target="_blank" rel="noopener noreferrer">GitHub repository</a>
+      </div>
+
+    </div>
+
+    <script>
+      vegaEmbed("#vis-map", "js/australia_choropleth_map.json", { actions: true }).catch(console.error);
+      vegaEmbed("#vis-race", "js/racing_bar_chart.json", { actions: true }).catch(console.error);
+      vegaEmbed("#vis-income", "js/household_income_overview.json", { actions: true }).catch(console.error);
+      vegaEmbed("#vis-bump", "js/household_spending_bump.json", { actions: true }).catch(console.error);
+      
+      // Build the zoomable GVA sunburst (D3)
+      if (window.renderGVASunburst) {
+        window.renderGVASunburst('#vis-sunburst', 'data/gva_sunburst_Jun-2024_chain_volume.json')
+          .catch(console.error);
+      }
+    </script>
+  </body>
+</html>
