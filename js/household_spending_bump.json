@@ -8,7 +8,7 @@
     "contains": "padding"
   },
   "data": {
-    "url": "../data/Australia_Household_Income_2007_2020.csv",
+    "url": "data/Australia_Household_Income_2007_2020.csv",
     "format": {
       "type": "csv",
       "parse": {
@@ -209,7 +209,7 @@
     {
       "#comment": "Static annotation calling out Tasmania's long-run lower rank.",
       "data": {
-        "url": "../data/Australia_Household_Income_2007_2020.csv",
+        "url": "data/Australia_Household_Income_2007_2020.csv",
         "format": {
           "type": "csv",
           "parse": {
