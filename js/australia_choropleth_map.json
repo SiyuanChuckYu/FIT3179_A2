@@ -35,7 +35,7 @@
       "#comment": "Draw faint graticule gridlines to retain geographic orientation.",
       "name": "graticules",
       "data": {
-        "url": "../ne_50m.json",
+        "url": "ne_50m.json",
         "format": {
           "type": "topojson",
           "feature": "ne_50m_graticules_15"
@@ -53,7 +53,7 @@
       "#comment": "Shade each state by unemployment rate and configure hover + tooltip interactions.",
       "name": "states",
       "data": {
-        "url": "../ne_50m.json",
+        "url": "ne_50m.json",
         "format": {
           "type": "topojson",
           "feature": "ne_50m_admin_1_states_provinces"
@@ -69,7 +69,7 @@
           "lookup": "properties.name",
           "from": {
             "data": {
-              "url": "../data/unemployment_aug2025.csv"
+              "url": "data/unemployment_aug2025.csv"
             },
             "key": "state",
             "fields": [
@@ -132,7 +132,7 @@
     {
       "#comment": "Arrow/text annotations from CSV highlight narrative callouts on the map.",
       "data": {
-        "url": "../data/annotations.csv",
+        "url": "data/annotations.csv",
         "format": {
           "type": "csv"
         }
