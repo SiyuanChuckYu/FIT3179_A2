@@ -3,7 +3,7 @@
   "#comment": "Tells Vega-Embed to load the custom D3 sunburst component with its data file.",
   "description": "Declarative wrapper linking the D3 sunburst component to its data file for embedding.",
   "title": "Sunburst: GVA by Industry (Chain volume, Jun 2024)",
-  "data": "../data/gva_sunburst_Jun-2024_chain_volume.json",
+  "data": "data/gva_sunburst_Jun-2024_chain_volume.json",
   "component": "./gva_zoomable_sunburst.js",
   "notes": "Rendered via D3 (imperative), see component for implementation."
 }
