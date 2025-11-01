@@ -202,7 +202,7 @@
     {
       "#comment": "Raw unemployment data by state/year.",
       "name": "input",
-      "url": "../data/unemployment_states_yearly.csv",
+      "url": "data/unemployment_states_yearly.csv",
       "format": {
         "type": "csv",
         "parse": {
