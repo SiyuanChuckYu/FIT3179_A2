@@ -10,7 +10,7 @@
   "background": null,
   "spacing": 20,
   "data": {
-    "url": "../data/household_spending_state_totals_annual.csv",
+    "url": "data/household_spending_state_totals_annual.csv",
     "format": {
       "type": "csv",
       "parse": {
